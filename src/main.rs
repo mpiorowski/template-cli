@@ -35,6 +35,7 @@ fn main() -> Result<()> {
         }
         Action::Print => {
             println!("{:?}", setup);
+            print!("Missssspell");
         }
     }
     Ok(())
