@@ -3,6 +3,7 @@
 Have You ever wanted to insert new route which let You use page params and query using NextJS?  
 Or create a server side page with load and action for SvelteKit with new `satisfies` operator?  
 Or make a Java Spring Controller files with all the @Annotations for params and queries?
+
 And You always need to check the documentation, because You forget how excatly the pages looks like? Which hooks to use, what types to import, how to properly name the function?
 
 If yes, then Templates cli is for You :).
