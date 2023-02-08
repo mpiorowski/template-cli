@@ -23,7 +23,9 @@ fn main() -> Result<()> {
 
             let templates = find_templates(&templates_path.join(lib), &pages)?;
             for template in templates {
+                println!("Copying {:?} to {:?}", template, path);
                 let template_name = template.file_name().context("File not valid")?;
+                fs::create_dir_all(&path).context("Folder not created")?;
                 fs::copy(&template, &path.join(template_name)).context("File not copied")?;
             }
         }
