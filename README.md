@@ -67,3 +67,11 @@ tp add next p lj
 ```
 
 This will create a `page.ts` and `layout.js` in `./` dir and copy content of `next/[p]page.ts` and `next/[lj]layout.js` respectively inside them.
+
+### Print
+
+```
+tp print
+```
+
+Print the current configuration.
