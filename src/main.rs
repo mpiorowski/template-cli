@@ -14,6 +14,7 @@ fn main() -> Result<()> {
     let path = &setup.path;
     match setup.action {
         Action::Set(set) => {
+            println!("Setting templates path to {:?}", set.path);
             set_templates_path(&set.path)?;
         }
         Action::Add(add) => {
@@ -23,10 +24,13 @@ fn main() -> Result<()> {
 
             let templates = find_templates(&templates_path.join(lib), &pages)?;
             for template in templates {
-                println!("Copying {:?} to {:?}", template, path);
-                let template_name = template.file_name().context("File not valid")?;
+                println!(
+                    "Copying {:?} to {:?}",
+                    template.path,
+                    path.join(&template.name)
+                );
                 fs::create_dir_all(&path).context("Folder not created")?;
-                fs::copy(&template, &path.join(template_name)).context("File not copied")?;
+                fs::copy(&template.path, &path.join(template.name)).context("File not copied")?;
             }
         }
         Action::Print => {
@@ -36,28 +40,52 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+#[derive(Debug)]
+struct Template {
+    name: String,
+    path: PathBuf,
+}
+
 /**
- * For every file inside path, find all the files that start with # page_name
+ * For every file inside path, find all the files that start with `[page]` and return the path with the page name
+ * Files name must be in the format `[page]name`
  * @param path Path to the folder
  * @param pages Vector of pages to find
  * @return Paths of the files that are valid
  */
-fn find_templates(path: &PathBuf, pages: &Vec<String>) -> Result<Vec<PathBuf>> {
+fn find_templates(path: &PathBuf, pages: &Vec<String>) -> Result<Vec<Template>> {
     let mut templates = vec![];
     let mut files = fs::read_dir(path).context("Path not valid")?;
     while let Some(file) = files.next() {
         let file = file.context("File not valid")?;
         let file_path = file.path();
-        let file_content = fs::read_to_string(&file_path).context("File not valid")?;
-        let file_content = file_content.lines().next().context("File not valid")?;
-        let file_content = file_content.trim();
+        let file_name = file_path.file_name().context("File not valid")?;
+        let file_name = file_name.to_str().context("File not valid")?;
+
+        // let file_content = fs::read_to_string(&file_path).context("File not valid")?;
+        // let file_content = file_content.lines().next().context("File not valid")?;
+        // let file_content = file_content.trim();
 
         for page in pages {
-            if file_content.starts_with("# ") && file_content[2..] == page.to_string() {
-                templates.push(PathBuf::from(&file_path));
-            } else {
-                println!("No templates found matching \"# {}\"", page);
+            let end = file_name.find(']').with_context(|| {
+                format!("Filename not valid. Not found ']' in: {:?}", file_name)
+            })?;
+            let start = file_name.find('[').with_context(|| {
+                format!("Filename not valid. Not found '[' in: {:?}", file_name)
+            })?;
+            let file_page = &file_name[start + 1..end];
+            let new_name = file_name[end + 1..].to_string();
+            if file_page == page {
+                templates.push(Template {
+                    name: new_name,
+                    path: PathBuf::from(&file_path),
+                });
             }
+            // if file_content.starts_with("# ") && file_content[2..] == page.to_string() {
+            //     templates.push(PathBuf::from(&file_path));
+            // } else {
+            //     println!("No templates found matching \"# {}\"", page);
+            // }
         }
     }
     return Ok(templates);
