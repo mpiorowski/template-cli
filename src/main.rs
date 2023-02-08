@@ -5,16 +5,24 @@ use std::{fs, path::PathBuf};
 use templates_cli::{
     opts::{Action, Opts},
     setup::Setup,
-    utils::get_config_path,
+    utils::{check_folder, get_config_path},
 };
 
 fn main() -> Result<()> {
     let setup = Setup::try_from(Opts::parse())?;
+    let templates_path = &setup.config.templates_path;
     match setup.action {
         Action::Set(set) => {
             set_templates_path(&set.path)?;
         }
         Action::Add(add) => {
+            let lib = &add.lib;
+            let pages = &add.pages;
+            check_folder(&templates_path.join(lib))?;
+
+            let templates = find_page(&templates_path.join(lib), &pages)?;
+            println!("{:?}", templates);
+
             println!("Add");
             println!("{:?}", add);
         }
@@ -23,6 +31,27 @@ fn main() -> Result<()> {
         }
     }
     Ok(())
+}
+
+/**
+ * For every file inside path, find all the files that start with # page_name
+ * @param path Path to the folder
+ * @param vec Vector of strings to check
+ * @return Paths of the files that are valid
+ */
+fn find_page(path: &PathBuf, pages: &Vec<String>) -> Result<Vec<PathBuf>> {
+    let mut templates = vec![];
+    let mut files = fs::read_dir(path).context("Path not valid")?;
+    while let Some(file) = files.next() {
+        let file = file.context("File not valid")?;
+        let file_path = file.path();
+        let file_content = fs::read_to_string(&file_path).context("File not valid")?;
+        let file_content = file_content.lines().next().context("File not valid")?;
+        if file_content.starts_with("# ") && pages.contains(&file_content[2..].to_string()) {
+            templates.push(file_path);
+        }
+    }
+    return Ok(templates);
 }
 
 fn set_templates_path(path: &PathBuf) -> Result<()> {
