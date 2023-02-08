@@ -39,10 +39,10 @@ impl Config {
         if std::fs::metadata(&config_path).is_err() {
             let mut file =
                 std::fs::File::create(&config_path).context("Config file not created")?;
-            file.write_all(b"{\"templates_path\": \"/tmp\"}")
+            file.write_all(b"{\"templates_path\": \"~/tmp\"}")
                 .context("Config file not written")?;
             return Ok(Config {
-                templates_path: PathBuf::from("/tmp"),
+                templates_path: PathBuf::from("~/tmp"),
             });
         }
 

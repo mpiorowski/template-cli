@@ -1,9 +1,15 @@
 [package]
-name = "templates-cli"
+name = "templates"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Mateusz Piórowski <mateuszpiorowski@gmail.com>"]
+license = "MIT"
+description = "A CLI for managing templates"
+readme = "README.md"
+homepage = "https://github.com/mpiorowski/templates-cli"
+repository = "https://github.com/mpiorowski/templates-cli"
+keywords = ["cli", "utilities", "templates"]
+categories = ["command-line-utilities"]
 
 [[bin]]
 name = "tp"
