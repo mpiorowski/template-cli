@@ -1,8 +1,8 @@
 # Templates CLI
 
-Have You ever wanted to insert new route which let You use page params and query using NextJS?  
-Or create a server side page with load and action for SvelteKit with new `satisfies` operator?  
-Or make a Java Spring Controller files with all the @Annotations for params and queries?
+Have You ever wanted to create new NextJS route which let You use query parameters using `useSearchParams` hook?  
+Or insert a server side page exporting load and action functions for SvelteKit with new `satisfies` operator?  
+Or make a Java Spring Controller files with all the @Annotations and routes set for GET, POST, PUT ready?
 
 And You always need to check the documentation, because You forget how excatly the pages looks like? Which hooks to use, what types to import, how to properly name the function?
 
