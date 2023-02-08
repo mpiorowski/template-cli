@@ -4,9 +4,9 @@ Have You ever wanted to insert new route which let You use page params and query
 Or create a server side page with load and action for SvelteKit with new `satisfies` operator?  
 And You always need to check the documentation, because You always forget how excatly the pages looks like? Which hooks to use, what types to import, how to properly name the function?
 
-If yes, then Templates cli is for You then :).  
+If yes, then Templates cli is for You then :).
 
-It's a simple tool that let's You fastly create, manage and use a set of templates pages.  
+It's a simple tool that let's You fastly create, manage and use a set of templates pages.
 
 Full written in <b>Rust</b> (needed to point it out, cos this is why You learn Rust, right?).
 
@@ -54,7 +54,7 @@ Few examples:
 tp add <lib> [pages] -p <path>
 ```
 
-- `lib` - the name of the subfolder inside Yuor templates folder. 
+- `lib` - the name of the subfolder inside Yuor templates folder.
 - `pages` - list of shortcut inside subfolder (e.g. `p`, `ls`).
 - `path` - path for where the files will be created (optional).
 
