@@ -6,7 +6,7 @@ Or make a Java Spring Controller files with all the @Annotations and routes set 
 
 And You always needed to check the documentation, because You forget how excatly the pages looks like? Which hooks to use, what types to import, how to properly name the functions?
 
-If yes, then Templates cli is for You :).
+If yes, then <B>Templates CLI</b> is for You :).
 
 It's a simple tool that let's You very easly create, manage and use a set of templates pages for Your projects.
 
