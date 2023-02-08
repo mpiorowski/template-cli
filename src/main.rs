@@ -35,7 +35,6 @@ fn main() -> Result<()> {
         }
         Action::Print => {
             println!("{:?}", setup);
-            print!("Test code");
         }
     }
     Ok(())
