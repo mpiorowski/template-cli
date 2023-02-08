@@ -11,6 +11,7 @@ use templates_cli::{
 fn main() -> Result<()> {
     let setup = Setup::try_from(Opts::parse())?;
     let templates_path = &setup.config.templates_path;
+    let path = &setup.path;
     match setup.action {
         Action::Set(set) => {
             set_templates_path(&set.path)?;
@@ -20,11 +21,11 @@ fn main() -> Result<()> {
             let pages = &add.pages;
             check_folder(&templates_path.join(lib))?;
 
-            let templates = find_page(&templates_path.join(lib), &pages)?;
-            println!("{:?}", templates);
-
-            println!("Add");
-            println!("{:?}", add);
+            let templates = find_templates(&templates_path.join(lib), &pages)?;
+            for template in templates {
+                let template_name = template.file_name().context("File not valid")?;
+                fs::copy(&template, &path.join(template_name)).context("File not copied")?;
+            }
         }
         Action::Print => {
             println!("{:?}", setup);
@@ -36,10 +37,10 @@ fn main() -> Result<()> {
 /**
  * For every file inside path, find all the files that start with # page_name
  * @param path Path to the folder
- * @param vec Vector of strings to check
+ * @param pages Vector of pages to find
  * @return Paths of the files that are valid
  */
-fn find_page(path: &PathBuf, pages: &Vec<String>) -> Result<Vec<PathBuf>> {
+fn find_templates(path: &PathBuf, pages: &Vec<String>) -> Result<Vec<PathBuf>> {
     let mut templates = vec![];
     let mut files = fs::read_dir(path).context("Path not valid")?;
     while let Some(file) = files.next() {
@@ -47,13 +48,24 @@ fn find_page(path: &PathBuf, pages: &Vec<String>) -> Result<Vec<PathBuf>> {
         let file_path = file.path();
         let file_content = fs::read_to_string(&file_path).context("File not valid")?;
         let file_content = file_content.lines().next().context("File not valid")?;
-        if file_content.starts_with("# ") && pages.contains(&file_content[2..].to_string()) {
-            templates.push(file_path);
+        let file_content = file_content.trim();
+
+        for page in pages {
+            if file_content.starts_with("# ") && file_content[2..] == page.to_string() {
+                templates.push(PathBuf::from(&file_path));
+            } else {
+                println!("No templates found matching \"# {}\"", page);
+            }
         }
     }
     return Ok(templates);
 }
 
+/**
+ * Set the templates path in the config file
+ * @param path Path to the templates folder
+ * @return Result
+ */
 fn set_templates_path(path: &PathBuf) -> Result<()> {
     // templates path
     let templates_str = &path.to_str().context("Path not valid")?;

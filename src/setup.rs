@@ -14,7 +14,7 @@ pub struct Config {
 pub struct Setup {
     pub action: Action,
     pub config: Config,
-    pub path: Option<PathBuf>,
+    pub path: PathBuf,
 }
 
 impl Action {
@@ -58,20 +58,38 @@ impl Config {
     }
 }
 
+impl TryFrom<&Opts> for PathBuf {
+    type Error = anyhow::Error;
+
+    fn try_from(opts: &Opts) -> Result<Self> {
+        match &opts.action {
+            Action::Set(set) => Ok(set.path.to_owned()),
+            Action::Add(add) => {
+                if let Some(path) = &add.path {
+                    Ok(path.to_owned())
+                } else {
+                    Ok(PathBuf::from("."))
+                }
+            }
+            Action::Print => Ok(PathBuf::from(".")),
+        }
+    }
+}
+
 impl TryFrom<Opts> for Setup {
     type Error = anyhow::Error;
 
     fn try_from(opts: Opts) -> Result<Self> {
-        let action = opts.action;
-        let copy = action.copy();
+        let copy = opts.action.copy();
         let config = Config::create()?;
-        match action {
+        let path = PathBuf::try_from(&opts)?;
+        match opts.action {
             Action::Set(set) => {
                 check_folder(&set.path)?;
                 return Ok(Self {
                     action: copy,
                     config,
-                    path: Some(set.path),
+                    path,
                 });
             }
             Action::Add(add) => {
@@ -82,13 +100,13 @@ impl TryFrom<Opts> for Setup {
                 return Ok(Self {
                     action: copy,
                     config,
-                    path: add.path,
+                    path,
                 });
             }
             Action::Print => Ok(Self {
                 action: copy,
                 config,
-                path: None,
+                path,
             }),
         }
     }
