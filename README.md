@@ -4,13 +4,13 @@ Have You ever wanted to insert new route which let You use page params and query
 Or create a server side page with load and action for SvelteKit with new `satisfies` operator?  
 And You always need to check the documentation, because You always forget how excatly the pages looks like? Which hooks to use, what types to import, how to properly name the function?
 
-If yes, then Templates cli is for You then :).
+If yes, then Templates cli is for You :).
 
-It's a simple tool that let's You fastly create, manage and use a set of templates pages.
+It's a simple tool that let's You very easly create, manage and use a set of templates pages for Your projects.
 
 Full written in <b>Rust</b> (needed to point it out, cos this is why You learn Rust, right?).
 
-Best way to learn is by example!
+## Best way to learn is by example!
 
 ```
 tp add svelte p ps e -p reports
