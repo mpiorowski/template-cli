@@ -56,15 +56,12 @@ struct Template {
 fn find_templates(path: &PathBuf, pages: &Vec<String>) -> Result<Vec<Template>> {
     let mut templates = vec![];
     let mut files = fs::read_dir(path).context("Path not valid")?;
+
     while let Some(file) = files.next() {
         let file = file.context("File not valid")?;
         let file_path = file.path();
         let file_name = file_path.file_name().context("File not valid")?;
         let file_name = file_name.to_str().context("File not valid")?;
-
-        // let file_content = fs::read_to_string(&file_path).context("File not valid")?;
-        // let file_content = file_content.lines().next().context("File not valid")?;
-        // let file_content = file_content.trim();
 
         for page in pages {
             let end = file_name.find(']').with_context(|| {
@@ -81,11 +78,6 @@ fn find_templates(path: &PathBuf, pages: &Vec<String>) -> Result<Vec<Template>> 
                     path: PathBuf::from(&file_path),
                 });
             }
-            // if file_content.starts_with("# ") && file_content[2..] == page.to_string() {
-            //     templates.push(PathBuf::from(&file_path));
-            // } else {
-            //     println!("No templates found matching \"# {}\"", page);
-            // }
         }
     }
     return Ok(templates);
