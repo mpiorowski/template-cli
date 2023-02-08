@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use serde_json::{from_str, to_string, to_string_pretty, Value};
 use std::{fs, path::PathBuf};
-use templates_cli::{
+use templates::{
     opts::{Action, Opts},
     setup::Setup,
     utils::{check_folder, get_config_path},
@@ -35,6 +35,7 @@ fn main() -> Result<()> {
         }
         Action::Print => {
             println!("{:?}", setup);
+            print!("Test code");
         }
     }
     Ok(())
