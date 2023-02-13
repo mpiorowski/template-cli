@@ -5,7 +5,7 @@ use crate::{
 use anyhow::{Context, Result};
 use std::{io::Write, path::PathBuf};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Config {
     pub templates_path: PathBuf,
 }
@@ -109,5 +109,41 @@ impl TryFrom<Opts> for Setup {
                 path,
             }),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::Setup;
+    use crate::opts::{Action, Opts, Set};
+    use anyhow::Result;
+    use std::path::PathBuf;
+
+    #[test]
+    fn setup_print() -> Result<()> {
+        let setup: Setup = Opts {
+            action: Action::Print,
+        }
+        .try_into()?;
+        assert_eq!(setup.action, Action::Print);
+        assert_eq!(setup.path, PathBuf::from("."));
+        return Ok(());
+    }
+
+    #[test]
+    fn setup_set() -> Result<()> {
+        let template_path = PathBuf::from("/templates");
+        let setup: Result<Setup> = Opts {
+            action: Action::Set(Set {
+                path: template_path.clone(),
+            }),
+        }
+        .try_into();
+        if template_path.is_dir() {
+            assert!(setup.is_ok());
+        } else {
+            assert!(setup.is_err());
+        }
+        return Ok(());
     }
 }

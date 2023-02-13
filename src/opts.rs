@@ -12,7 +12,7 @@ pub struct Opts {
     pub action: Action,
 }
 
-#[derive(Subcommand, Debug)]
+#[derive(Subcommand, Debug, PartialEq)]
 pub enum Action {
     #[command(about = "Set a templates folder")]
     Set(Set),
@@ -22,14 +22,13 @@ pub enum Action {
     Print,
 }
 
-#[derive(Args, Debug)]
+#[derive(Args, Debug, PartialEq)]
 pub struct Set {
     pub path: PathBuf,
 }
 
-#[derive(Args, Debug)]
+#[derive(Args, Debug, PartialEq)]
 pub struct Add {
-
     pub lib: String,
 
     pub pages: Vec<String>,
