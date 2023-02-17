@@ -20,6 +20,12 @@ tp add svelte p ps e -p reports
 
 This will create a `+page.svelte`, `+page.server.ts`, `+error.ts` in `./reports` folder, each containing their own template You prepared beforehand (containing types, function, whatever You want).
 
+```
+tp add next l
+```
+
+This will create a `layout.tsx` in current folder with previously prepared NextJS tempalte.
+
 ## Install
 
 ```
