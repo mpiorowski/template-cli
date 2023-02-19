@@ -17,9 +17,9 @@ fn main() -> Result<()> {
             println!("Setting templates path to {:?}", set.path);
             set_templates_path(&set.path)?;
         }
-        Action::Add(add) => {
-            let lib = &add.lib;
-            let pages = &add.pages;
+        Action::Use(val) => {
+            let lib = &val.lib;
+            let pages = &val.pages;
             check_folder(&templates_path.join(lib))?;
 
             let templates = find_templates(&templates_path.join(lib), &pages)?;
@@ -32,6 +32,12 @@ fn main() -> Result<()> {
                 fs::create_dir_all(&path).context("Folder not created")?;
                 fs::copy(&template.path, &path.join(template.name)).context("File not copied")?;
             }
+        }
+        Action::Add(add) => {
+            let lib = &add.lib;
+            let short = &add.short;
+            let file = &add.file;
+            add_file_to_templates(&file, &lib, &short, &templates_path)?;
         }
         Action::Print => {
             println!("{:?}", setup);
@@ -81,6 +87,40 @@ fn find_templates(path: &PathBuf, pages: &Vec<String>) -> Result<Vec<Template>> 
         }
     }
     return Ok(templates);
+}
+
+fn add_file_to_templates(
+    path: &PathBuf,
+    lib: &String,
+    short: &String,
+    templates_path: &PathBuf,
+) -> Result<()> {
+    check_folder(&templates_path.join(lib)).with_context(|| {
+        format!(
+            "Folder not found: {:?}",
+            templates_path.join(lib).to_str().unwrap()
+        )
+    })?;
+
+    let filename = path.file_name().context("File not valid")?;
+
+    fs::copy(
+        &path,
+        &templates_path.join(lib).join(format!(
+            "[{}]{}",
+            short,
+            filename.to_str().context("File not valid")?
+        )),
+    )
+    .with_context(|| format!("File not copied to {:?}", templates_path))?;
+
+    println!(
+        "File {:?} copied to {:?}",
+        path,
+        templates_path.join(lib).join(format!("[{}]{}", short, filename.to_str().unwrap()))
+    );
+
+    return Ok(());
 }
 
 /**

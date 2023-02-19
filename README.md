@@ -15,13 +15,13 @@ Full written in <b>Rust</b> (needed to point it out, cos this is why You learn R
 ## Best way to learn is by example!
 
 ```
-tp add svelte p ps e -p reports
+tp use svelte p ps e -p reports
 ```
 
 This will create a `+page.svelte`, `+page.server.ts`, `+error.ts` in `./reports` folder, each containing their own template You prepared beforehand (containing types, function, whatever You want).
 
 ```
-tp add next l
+tp use next l
 ```
 
 This will create a `layout.tsx` in current folder with previously prepared NextJS tempalte.
@@ -56,23 +56,39 @@ Few examples:
 - `next/[lt]layout.ts`
 - `next/[lj]layout.js`
 
-### Add
+### Use
 
 ```
-tp add <lib> [pages] -p <path>
+tp use <lib> [pages] -p <path>
 ```
 
-- `lib` - the name of the subfolder inside Yuor templates folder.
+- `lib` - the name of the subfolder inside Your templates folder.
 - `pages` - list of shortcut inside subfolder (e.g. `p`, `ls`).
 - `path` - path for where the files will be created (optional).
 
 Using example settings from config section:
 
 ```
-tp add next p lj
+tp use next p lj
 ```
 
 This will create a `page.ts` and `layout.js` in `./` dir and copy content of `next/[p]page.ts` and `next/[lj]layout.js` respectively inside them.
+
+### Add
+
+```
+tp add <file> <lib> <short>
+```
+
+- `file` - the file that You want to add to templates folder
+- `lib` - the name of the subfolder inside templates folder (e.g. `svelte`, `next`)
+- `short` - the shortcut You want to use to access template (e.g. `p`, `ps`, `l`)
+
+```
+tp add this_page.tsx next p
+```
+
+This will copy `this_page.tsx` file into `next` subfolder inside templates folder with the `[p]` shortcut for later access (`[p]this_page.tsx')
 
 ### Print
 
