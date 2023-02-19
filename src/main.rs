@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use clap::Parser;
 use serde_json::{from_str, to_string, to_string_pretty, Value};
-use std::{fs, path::PathBuf};
+use std::{collections::HashSet, fs, path::PathBuf};
 use templates::{
     opts::{Action, Opts},
     setup::Setup,
@@ -63,6 +63,8 @@ fn find_templates(path: &PathBuf, pages: &Vec<String>) -> Result<Vec<Template>> 
     let mut templates = vec![];
     let mut files = fs::read_dir(path).context("Path not valid")?;
 
+    let mut not_found: HashSet<String> = HashSet::new();
+
     while let Some(file) = files.next() {
         let file = file.context("File not valid")?;
         let file_path = file.path();
@@ -83,12 +85,25 @@ fn find_templates(path: &PathBuf, pages: &Vec<String>) -> Result<Vec<Template>> 
                     name: new_name,
                     path: PathBuf::from(&file_path),
                 });
+            } else {
+                not_found.insert(page.to_string());
             }
         }
     }
+    not_found.iter().for_each(|page| {
+        println!("Page {} not found", page);
+    });
     return Ok(templates);
 }
 
+/**
+ * Add a file to the templates folder
+ * @param path Path to the file
+ * @param lib Library name
+ * @param short Shortcut to be used
+ * @param templates_path Path to the templates folder
+ * @return Result
+ */
 fn add_file_to_templates(
     path: &PathBuf,
     lib: &String,
@@ -117,7 +132,9 @@ fn add_file_to_templates(
     println!(
         "File {:?} copied to {:?}",
         path,
-        templates_path.join(lib).join(format!("[{}]{}", short, filename.to_str().unwrap()))
+        templates_path
+            .join(lib)
+            .join(format!("[{}]{}", short, filename.to_str().unwrap()))
     );
 
     return Ok(());
