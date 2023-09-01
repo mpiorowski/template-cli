@@ -20,6 +20,8 @@ pub enum Action {
     Use(Use),
     #[command(about = "Add a new page to templates")]
     Add(Add),
+    #[command(about = "List all templates")]
+    List,
     #[command(about = "Print the current configuration")]
     Config,
 }

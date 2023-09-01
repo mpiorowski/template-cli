@@ -34,7 +34,8 @@ impl Action {
                 file: add.file.clone(),
                 short: add.short.clone(),
             }),
-            Action::Print => Action::Print,
+            Action::List => Action::List,
+            Action::Config => Action::Config,
         }
     }
 }
@@ -78,7 +79,8 @@ impl TryFrom<&Opts> for PathBuf {
                 }
             }
             Action::Add(add) => Ok(add.file.to_owned()),
-            Action::Print => Ok(PathBuf::from(".")),
+            Action::List => Ok(PathBuf::from(".")),
+            Action::Config => Ok(PathBuf::from(".")),
         }
     }
 }
@@ -119,7 +121,12 @@ impl TryFrom<Opts> for Setup {
                     path,
                 });
             }
-            Action::Print => Ok(Self {
+            Action::List => Ok(Self {
+                action: copy,
+                config,
+                path,
+            }),
+            Action::Config => Ok(Self {
                 action: copy,
                 config,
                 path,
@@ -138,10 +145,10 @@ mod test {
     #[test]
     fn setup_print() -> Result<()> {
         let setup: Setup = Opts {
-            action: Action::Print,
+            action: Action::Config,
         }
         .try_into()?;
-        assert_eq!(setup.action, Action::Print);
+        assert_eq!(setup.action, Action::Config);
         assert_eq!(setup.path, PathBuf::from("."));
         return Ok(());
     }
