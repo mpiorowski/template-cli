@@ -21,7 +21,7 @@ pub enum Action {
     #[command(about = "Add a new page to templates")]
     Add(Add),
     #[command(about = "Print the current configuration")]
-    Print,
+    Config,
 }
 
 #[derive(Args, Debug, PartialEq)]
