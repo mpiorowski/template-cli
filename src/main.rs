@@ -39,7 +39,10 @@ fn main() -> Result<()> {
             let file = &add.file;
             add_file_to_templates(&file, &lib, &short, &templates_path)?;
         }
-        Action::Print => {
+        Action::List => {
+            list_templates(&templates_path)?;
+        }
+        Action::Config => {
             println!("{:?}", setup);
         }
     }
@@ -50,6 +53,34 @@ fn main() -> Result<()> {
 struct Template {
     name: String,
     path: PathBuf,
+}
+
+/**
+ * Set the templates path in the config file
+ * @param path Path to the templates folder
+ * @return Result
+ */
+fn set_templates_path(path: &PathBuf) -> Result<()> {
+    // templates path
+    let templates_str = &path.to_str().context("Path not valid")?;
+    let templates_json = to_string(&templates_str).context("Json not valid")?;
+
+    // read config
+    let config_path = get_config_path()?;
+    let mut config_string = std::fs::read_to_string(&config_path).context("Config not found")?;
+    let mut config_json: Value = from_str(&config_string).context("Config not valid")?;
+
+    // write config
+    config_json["templates_path"] = from_str(&templates_json)
+        .with_context(|| format!("Json not valid: {:?}", templates_json))?;
+    config_string = to_string_pretty(&config_json)
+        .with_context(|| format!("Config not valid {:?}", config_string))?;
+
+    // save config
+    fs::write(&config_path, &config_string)
+        .with_context(|| format!("Config not written to {:?}", config_path))?;
+
+    return Ok(());
 }
 
 /**
@@ -141,29 +172,32 @@ fn add_file_to_templates(
 }
 
 /**
- * Set the templates path in the config file
- * @param path Path to the templates folder
+ * List all the templates in the templates folder
+ * @param templates_path Path to the templates folder
  * @return Result
  */
-fn set_templates_path(path: &PathBuf) -> Result<()> {
-    // templates path
-    let templates_str = &path.to_str().context("Path not valid")?;
-    let templates_json = to_string(&templates_str).context("Json not valid")?;
+fn list_templates(templates_path: &PathBuf) -> Result<()> {
+    let mut files = fs::read_dir(templates_path).context("Path not valid")?;
 
-    // read config
-    let config_path = get_config_path()?;
-    let mut config_string = std::fs::read_to_string(&config_path).context("Config not found")?;
-    let mut config_json: Value = from_str(&config_string).context("Config not valid")?;
+    while let Some(file) = files.next() {
+        let file = file.context("File not valid")?;
+        let file_path = file.path();
+        let file_name = file_path.file_name().context("File not valid")?;
+        let file_name = file_name.to_str().context("File not valid")?;
+        println!("{}", file_name);
 
-    // write config
-    config_json["templates_path"] = from_str(&templates_json)
-        .with_context(|| format!("Json not valid: {:?}", templates_json))?;
-    config_string = to_string_pretty(&config_json)
-        .with_context(|| format!("Config not valid {:?}", config_string))?;
-
-    // save config
-    fs::write(&config_path, &config_string)
-        .with_context(|| format!("Config not written to {:?}", config_path))?;
+        let is_dir = file.file_type().context("File not valid")?.is_dir();
+        if is_dir {
+            let mut sub_files = fs::read_dir(&file_path).context("Path not valid")?;
+            while let Some(sub_file) = sub_files.next() {
+                let sub_file = sub_file.context("File not valid")?;
+                let sub_file_path = sub_file.path();
+                let sub_file_name = sub_file_path.file_name().context("File not valid")?;
+                let sub_file_name = sub_file_name.to_str().context("File not valid")?;
+                println!("  {}", sub_file_name);
+            }
+        }
+    }
 
     return Ok(());
 }
