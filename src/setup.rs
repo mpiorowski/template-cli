@@ -1,14 +1,10 @@
 use crate::{
-    opts::{Action, Add, Opts, Set, Use},
-    utils::{check_file, check_folder, get_config_path},
+    config::Config,
+    opts::{Action, Opts},
+    utils::{check_file, check_folder},
 };
-use anyhow::{Context, Result};
-use std::{io::Write, path::PathBuf};
-
-#[derive(Debug, PartialEq)]
-pub struct Config {
-    pub templates_path: PathBuf,
-}
+use anyhow::Result;
+use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct Setup {
@@ -17,60 +13,70 @@ pub struct Setup {
     pub path: PathBuf,
 }
 
-impl Action {
-    // TODO - dont use copy
-    fn copy(&self) -> Self {
-        match self {
-            Action::Set(set) => Action::Set(Set {
-                path: set.path.clone(),
-            }),
-            Action::Use(add) => Action::Use(Use {
-                lib: add.lib.clone(),
-                pages: add.pages.clone(),
-                path: add.path.clone(),
-            }),
-            Action::Add(add) => Action::Add(Add {
-                lib: add.lib.clone(),
-                file: add.file.clone(),
-                short: add.short.clone(),
-            }),
-            Action::List => Action::List,
-            Action::Config => Action::Config,
-        }
-    }
-}
-
-impl Config {
-    fn create() -> Result<Self> {
-        let config_path = get_config_path()?;
-        if std::fs::metadata(&config_path).is_err() {
-            let mut file =
-                std::fs::File::create(&config_path).context("Config file not created")?;
-            file.write_all(b"{\"templates_path\": \"~/tmp\"}")
-                .context("Config file not written")?;
-            return Ok(Config {
-                templates_path: PathBuf::from("~/tmp"),
-            });
-        }
-
-        let config = std::fs::read_to_string(&config_path).context("Config not found")?;
-        let config: serde_json::Value =
-            serde_json::from_str(&config).context("Config not valid")?;
-        let templates_path = config
-            .get("templates_path")
-            .and_then(|v| v.as_str())
-            .map(|v| PathBuf::from(v))
-            .context("Templates folder path not found in config")?;
-        return Ok(Config { templates_path });
-    }
-}
-
-impl TryFrom<&Opts> for PathBuf {
+impl TryFrom<Opts> for Setup {
     type Error = anyhow::Error;
 
-    fn try_from(opts: &Opts) -> Result<Self> {
-        match &opts.action {
-            Action::Set(set) => Ok(set.path.to_owned()),
+    fn try_from(opts: Opts) -> Result<Self> {
+        let action = opts.action;
+        let config = Config::create()?;
+        match action {
+            Action::Set(_) => {
+                let path = PathBuf::try_from(&action)?;
+                check_folder(&path)?;
+                return Ok(Self {
+                    action,
+                    config,
+                    path,
+                });
+            }
+            Action::Var(_) => {
+                let path = PathBuf::try_from(&action)?;
+                check_file(&path)?;
+                return Ok(Self {
+                    action,
+                    config,
+                    path,
+                });
+            }
+            Action::Use(ref val) => {
+                let path = PathBuf::try_from(&action)?;
+                let pages = &val.pages;
+                if pages.is_empty() {
+                    return Err(anyhow::anyhow!("No pages provided"));
+                }
+                return Ok(Self {
+                    action,
+                    config,
+                    path,
+                });
+            }
+            Action::List => {
+                let path = PathBuf::try_from(&action)?;
+                check_folder(&path)?;
+                return Ok(Self {
+                    action,
+                    config,
+                    path,
+                });
+            }
+            Action::Config => {
+                let path = PathBuf::try_from(&action)?;
+                Ok(Self {
+                    action,
+                    config,
+                    path,
+                })
+            }
+        }
+    }
+}
+
+impl TryFrom<&Action> for PathBuf {
+    type Error = anyhow::Error;
+
+    fn try_from(action: &Action) -> Result<Self> {
+        match &action {
+            Action::Set(path) => Ok(path.path.to_owned()),
             Action::Use(add) => {
                 if let Some(path) = &add.path {
                     Ok(path.to_owned())
@@ -78,59 +84,9 @@ impl TryFrom<&Opts> for PathBuf {
                     Ok(PathBuf::from("."))
                 }
             }
-            Action::Add(add) => Ok(add.file.to_owned()),
+            Action::Var(path) => Ok(path.path.to_owned()),
             Action::List => Ok(PathBuf::from(".")),
             Action::Config => Ok(PathBuf::from(".")),
-        }
-    }
-}
-
-impl TryFrom<Opts> for Setup {
-    type Error = anyhow::Error;
-
-    fn try_from(opts: Opts) -> Result<Self> {
-        // TODO - dont use copy
-        let copy = opts.action.copy();
-        let config = Config::create()?;
-        let path = PathBuf::try_from(&opts)?;
-        match opts.action {
-            Action::Set(set) => {
-                check_folder(&set.path)?;
-                return Ok(Self {
-                    action: copy,
-                    config,
-                    path,
-                });
-            }
-            Action::Add(add) => {
-                check_file(&add.file)?;
-                return Ok(Self {
-                    action: copy,
-                    config,
-                    path,
-                });
-            }
-            Action::Use(val) => {
-                let pages = val.pages;
-                if pages.is_empty() {
-                    return Err(anyhow::anyhow!("No pages provided"));
-                }
-                return Ok(Self {
-                    action: copy,
-                    config,
-                    path,
-                });
-            }
-            Action::List => Ok(Self {
-                action: copy,
-                config,
-                path,
-            }),
-            Action::Config => Ok(Self {
-                action: copy,
-                config,
-                path,
-            }),
         }
     }
 }
@@ -138,7 +94,7 @@ impl TryFrom<Opts> for Setup {
 #[cfg(test)]
 mod test {
     use super::Setup;
-    use crate::opts::{Action, Opts, Set};
+    use crate::opts::{Action, Opts, Path};
     use anyhow::Result;
     use std::path::PathBuf;
 
@@ -157,7 +113,7 @@ mod test {
     fn setup_set() -> Result<()> {
         let template_path = PathBuf::from("/templates");
         let setup: Result<Setup> = Opts {
-            action: Action::Set(Set {
+            action: Action::Set(Path {
                 path: template_path.clone(),
             }),
         }

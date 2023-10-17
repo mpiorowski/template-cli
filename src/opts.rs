@@ -14,14 +14,12 @@ pub struct Opts {
 
 #[derive(Subcommand, Debug, PartialEq)]
 pub enum Action {
-    #[command(about = "Set a templates folder")]
+    #[command(about = "Set a templates main folder")]
     Set(Path),
-    #[command(about = "Use a template")]
+    #[command(about = "Use the template file")]
     Use(Use),
-    #[command(about = "Use an environment variable")]
-    Env(Path),
-    #[command(about = "Add a new page to templates")]
-    Add(Add),
+    #[command(about = "Replace the template variables")]
+    Var(Var),
     #[command(about = "List all templates")]
     List,
     #[command(about = "Print the current configuration")]
@@ -34,20 +32,18 @@ pub struct Path {
 }
 
 #[derive(Args, Debug, PartialEq)]
+pub struct Var {
+    pub project: String,
+
+    pub path: PathBuf,
+}
+
+#[derive(Args, Debug, PartialEq)]
 pub struct Use {
-    pub lib: String,
+    pub project: String,
 
     pub pages: Vec<String>,
 
     #[arg(short = 'p', long = "path")]
     pub path: Option<PathBuf>,
-}
-
-#[derive(Args, Debug, PartialEq)]
-pub struct Add {
-    pub file: PathBuf,
-
-    pub lib: String,
-
-    pub short: String,
 }

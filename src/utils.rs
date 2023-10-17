@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
 use std::path::PathBuf;
 
 pub fn check_folder(path: &PathBuf) -> Result<()> {
@@ -19,13 +19,4 @@ pub fn check_file(path: &PathBuf) -> Result<()> {
         return Err(anyhow::anyhow!("Path is not a file: {:?}", path));
     }
     Ok(())
-}
-
-pub fn get_config_path() -> Result<PathBuf> {
-    let loc = std::env::var("XDG_CONFIG_HOME")
-        .or_else(|_| std::env::var("HOME").map(|v| v + "/.config"))
-        .context("Config not set")?;
-    let mut loc = PathBuf::from(loc);
-    loc.push("templates-cli.json");
-    return Ok(loc);
 }

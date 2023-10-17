@@ -5,7 +5,7 @@ use std::{collections::HashSet, fs, path::PathBuf};
 use templates::{
     opts::{Action, Opts},
     setup::Setup,
-    utils::{check_folder, get_config_path},
+    utils::{check_file, check_folder},
 };
 
 fn main() -> Result<()> {
@@ -15,14 +15,14 @@ fn main() -> Result<()> {
     match setup.action {
         Action::Set(path) => {
             println!("Setting templates path to {:?}", path.path);
-            set_templates_path(&path.path)?;
+            set_templates_path(&path.path, &setup.config.config_path)?;
         }
         Action::Use(val) => {
-            let lib = &val.lib;
+            let lib = &val.project;
             let pages = &val.pages;
             check_folder(&templates_path.join(lib))?;
 
-            let templates = find_templates(&templates_path.join(lib), &pages)?;
+            let templates = use_template_files(&templates_path.join(lib), &pages)?;
             for template in templates {
                 println!(
                     "Copying {:?} to {:?}",
@@ -33,13 +33,11 @@ fn main() -> Result<()> {
                 fs::copy(&template.path, &path.join(template.name)).context("File not copied")?;
             }
         }
-        Action::Env(path) => {
-        },
-        Action::Add(add) => {
-            let lib = &add.lib;
-            let short = &add.short;
-            let file = &add.file;
-            add_file_to_templates(&file, &lib, &short, &templates_path)?;
+        Action::Var(var) => {
+            println!("Replacing variables in {:?}", var.path);
+            let var_file: &PathBuf = &setup.config.templates_path.join(&var.project).join("var");
+            check_file(var_file)?;
+            replace_template_variables(&var.path, var_file)?;
         }
         Action::List => {
             list_templates(&templates_path)?;
@@ -62,13 +60,12 @@ struct Template {
  * @param path Path to the templates folder
  * @return Result
  */
-fn set_templates_path(path: &PathBuf) -> Result<()> {
+fn set_templates_path(path: &PathBuf, config_path: &PathBuf) -> Result<()> {
     // templates path
     let templates_str = &path.to_str().context("Path not valid")?;
     let templates_json = to_string(&templates_str).context("Json not valid")?;
 
     // read config
-    let config_path = get_config_path()?;
     let mut config_string = std::fs::read_to_string(&config_path).context("Config not found")?;
     let mut config_json: Value = from_str(&config_string).context("Config not valid")?;
 
@@ -92,7 +89,7 @@ fn set_templates_path(path: &PathBuf) -> Result<()> {
  * @param pages Vector of pages to find
  * @return Paths of the files that are valid
  */
-fn find_templates(path: &PathBuf, pages: &Vec<String>) -> Result<Vec<Template>> {
+fn use_template_files(path: &PathBuf, pages: &Vec<String>) -> Result<Vec<Template>> {
     let mut templates = vec![];
     let mut files = fs::read_dir(path).context("Path not valid")?;
 
@@ -130,46 +127,42 @@ fn find_templates(path: &PathBuf, pages: &Vec<String>) -> Result<Vec<Template>> 
 }
 
 /**
- * Add a file to the templates folder
- * @param path Path to the file
- * @param lib Library name
- * @param short Shortcut to be used
- * @param templates_path Path to the templates folder
+ * Replace the variables in the requested file with the values in the template variables file
+ * Variables in the template file must be in the format `VAR=VAL`
+ * Variables in the requested file must be in the format `{{VAR}}`
+ * @param path Path to the requested file
+ * @param var_file Path to the variables file
  * @return Result
  */
-fn add_file_to_templates(
-    path: &PathBuf,
-    lib: &String,
-    short: &String,
-    templates_path: &PathBuf,
-) -> Result<()> {
-    check_folder(&templates_path.join(lib)).with_context(|| {
-        format!(
-            "Folder not found: {:?}",
-            templates_path.join(lib).to_str().unwrap()
-        )
-    })?;
+fn replace_template_variables(path: &PathBuf, var_file: &PathBuf) -> Result<()> {
+    let mut file = fs::read_to_string(&path).context(anyhow::anyhow!(
+        "Requested file not found. Create it at {:?}",
+        path
+    ))?;
+    let var_file = fs::read_to_string(&var_file).context(anyhow::anyhow!(
+        "Variables file not found. Create it at {:?}",
+        var_file
+    ))?;
 
-    let filename = path.file_name().context("File not valid")?;
+    // Split the file by lines
+    let lines = var_file.split('\n').collect::<Vec<&str>>();
+    for ele in lines {
+        // Split the line by `=` to get the variable and the value
+        let mut ele = ele.split('=').collect::<Vec<&str>>();
+        if ele.len() == 2 {
+            // Remove the spaces
+            ele[0] = ele[0].trim();
+            ele[1] = ele[1].trim();
 
-    fs::copy(
-        &path,
-        &templates_path.join(lib).join(format!(
-            "[{}]{}",
-            short,
-            filename.to_str().context("File not valid")?
-        )),
-    )
-    .with_context(|| format!("File not copied to {:?}", templates_path))?;
+            // Look for {{VAR}} in the file and replace it with the value
+            if !file.find(&format!("{{{{{}}}}}", ele[0])).is_none() {
+                file = file.replace(&format!("{{{{{}}}}}", ele[0]), ele[1]);
+                println!("Replaced {{{{{}}}}} with {}", ele[0], ele[1]);
+            }
+        }
+    }
 
-    println!(
-        "File {:?} copied to {:?}",
-        path,
-        templates_path
-            .join(lib)
-            .join(format!("[{}]{}", short, filename.to_str().unwrap()))
-    );
-
+    fs::write(&path, file).context("File not written")?;
     return Ok(());
 }
 
