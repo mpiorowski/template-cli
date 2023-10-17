@@ -190,6 +190,19 @@ fn list_templates(templates_path: &PathBuf) -> Result<()> {
                 let sub_file_name = sub_file_path.file_name().context("File not valid")?;
                 let sub_file_name = sub_file_name.to_str().context("File not valid")?;
                 println!("  {}", sub_file_name);
+                if sub_file_name == "var" {
+                    let var_file = fs::read_to_string(&sub_file_path)
+                        .context("Variables file not found")?;
+                    let lines = var_file.split('\n').collect::<Vec<&str>>();
+                    for ele in lines {
+                        let mut ele = ele.split('=').collect::<Vec<&str>>();
+                        if ele.len() == 2 {
+                            ele[0] = ele[0].trim();
+                            ele[1] = ele[1].trim();
+                            println!("    {} = {}", ele[0], ele[1]);
+                        }
+                    }
+                }
             }
         }
     }
