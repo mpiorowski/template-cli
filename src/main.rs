@@ -13,9 +13,9 @@ fn main() -> Result<()> {
     let templates_path = &setup.config.templates_path;
     let path = &setup.path;
     match setup.action {
-        Action::Set(set) => {
-            println!("Setting templates path to {:?}", set.path);
-            set_templates_path(&set.path)?;
+        Action::Set(path) => {
+            println!("Setting templates path to {:?}", path.path);
+            set_templates_path(&path.path)?;
         }
         Action::Use(val) => {
             let lib = &val.lib;
@@ -33,6 +33,8 @@ fn main() -> Result<()> {
                 fs::copy(&template.path, &path.join(template.name)).context("File not copied")?;
             }
         }
+        Action::Env(path) => {
+        },
         Action::Add(add) => {
             let lib = &add.lib;
             let short = &add.short;
@@ -177,7 +179,7 @@ fn add_file_to_templates(
  * @return Result
  */
 fn list_templates(templates_path: &PathBuf) -> Result<()> {
-    let mut files = fs::read_dir(templates_path).context("Path not valid")?;
+    let mut files = fs::read_dir(templates_path).context("Templates path not valid")?;
 
     while let Some(file) = files.next() {
         let file = file.context("File not valid")?;

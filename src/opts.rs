@@ -15,9 +15,11 @@ pub struct Opts {
 #[derive(Subcommand, Debug, PartialEq)]
 pub enum Action {
     #[command(about = "Set a templates folder")]
-    Set(Set),
+    Set(Path),
     #[command(about = "Use a template")]
     Use(Use),
+    #[command(about = "Use an environment variable")]
+    Env(Path),
     #[command(about = "Add a new page to templates")]
     Add(Add),
     #[command(about = "List all templates")]
@@ -27,7 +29,7 @@ pub enum Action {
 }
 
 #[derive(Args, Debug, PartialEq)]
-pub struct Set {
+pub struct Path {
     pub path: PathBuf,
 }
 
