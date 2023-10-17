@@ -38,6 +38,14 @@ impl TryFrom<Opts> for Setup {
                     path,
                 });
             }
+            Action::Copy(_) => {
+                let path = PathBuf::try_from(&action)?;
+                return Ok(Self {
+                    action,
+                    config,
+                    path,
+                });
+            }
             Action::Use(ref val) => {
                 let path = PathBuf::try_from(&action)?;
                 let pages = &val.pages;
@@ -77,6 +85,8 @@ impl TryFrom<&Action> for PathBuf {
     fn try_from(action: &Action) -> Result<Self> {
         match &action {
             Action::Set(path) => Ok(path.path.to_owned()),
+            Action::Copy(_) => Ok(PathBuf::from(".")),
+            Action::Var(path) => Ok(path.path.to_owned()),
             Action::Use(add) => {
                 if let Some(path) = &add.path {
                     Ok(path.to_owned())
@@ -84,7 +94,6 @@ impl TryFrom<&Action> for PathBuf {
                     Ok(PathBuf::from("."))
                 }
             }
-            Action::Var(path) => Ok(path.path.to_owned()),
             Action::List => Ok(PathBuf::from(".")),
             Action::Config => Ok(PathBuf::from(".")),
         }

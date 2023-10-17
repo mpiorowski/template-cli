@@ -1,7 +1,7 @@
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use clap::Parser;
 use serde_json::{from_str, to_string, to_string_pretty, Value};
-use std::{collections::HashSet, fs, path::PathBuf};
+use std::{fs, path::PathBuf};
 use templates::{
     opts::{Action, Opts},
     setup::Setup,
@@ -13,17 +13,37 @@ fn main() -> Result<()> {
     let templates_path = &setup.config.templates_path;
     let path = &setup.path;
     match setup.action {
-        Action::Set(path) => {
-            println!("Setting templates path to {:?}", path.path);
-            set_templates_path(&path.path, &setup.config.config_path)?;
+        Action::Set(val) => {
+            println!("Setting templates path to {:?}", val.path);
+            set_templates_path(&val.path, &setup.config.config_path)?;
+        }
+        Action::Var(val) => {
+            println!("Replacing variables in {:?}", val.path);
+            let var_file: &PathBuf = &templates_path.join(&val.project).join("var");
+            check_file(var_file)?;
+            replace_template_variables(&val.path, var_file)?;
+        }
+        Action::Copy(copy) => {
+            let project = &copy.project;
+            let page = &copy.page;
+
+            let template = find_template_file(&templates_path.join(project), page)?
+                .context(
+                anyhow!("Template not found. Create it in the templates folder with the format [{page}]name")
+            )?;
+            let template_path = &template.path;
+            let template_content = fs::read_to_string(&template_path).context("File not found")?;
+            println!("Copying {:?}", template_path);
+            println!("{}", template_content);
         }
         Action::Use(val) => {
-            let lib = &val.project;
+            let project = &val.project;
             let pages = &val.pages;
-            check_folder(&templates_path.join(lib))?;
+            check_folder(&templates_path.join(project))?;
 
-            let templates = use_template_files(&templates_path.join(lib), &pages)?;
-            for template in templates {
+            for page in pages {
+                let template = find_template_file(&templates_path.join(project), page)?
+                    .context(anyhow!("Template not found. Create it in the templates folder with the format [{page}]name"))?;
                 println!(
                     "Copying {:?} to {:?}",
                     template.path,
@@ -32,12 +52,6 @@ fn main() -> Result<()> {
                 fs::create_dir_all(&path).context("Folder not created")?;
                 fs::copy(&template.path, &path.join(template.name)).context("File not copied")?;
             }
-        }
-        Action::Var(var) => {
-            println!("Replacing variables in {:?}", var.path);
-            let var_file: &PathBuf = &setup.config.templates_path.join(&var.project).join("var");
-            check_file(var_file)?;
-            replace_template_variables(&var.path, var_file)?;
         }
         Action::List => {
             list_templates(&templates_path)?;
@@ -83,47 +97,30 @@ fn set_templates_path(path: &PathBuf, config_path: &PathBuf) -> Result<()> {
 }
 
 /**
- * For every file inside path, find all the files that start with `[page]` and return the path with the page name
+ * Find the template files in the templates folder
  * Files name must be in the format `[page]name`
- * @param path Path to the folder
+ * @param project_path Path to the project folder
  * @param pages Vector of pages to find
  * @return Paths of the files that are valid
  */
-fn use_template_files(path: &PathBuf, pages: &Vec<String>) -> Result<Vec<Template>> {
-    let mut templates = vec![];
-    let mut files = fs::read_dir(path).context("Path not valid")?;
+fn find_template_file(project_path: &PathBuf, page: &str) -> Result<Option<Template>> {
+    let mut project_dir = fs::read_dir(project_path).context("Project path not valid")?;
 
-    let mut not_found: HashSet<String> = HashSet::new();
-
-    while let Some(file) = files.next() {
+    while let Some(file) = project_dir.next() {
         let file = file.context("File not valid")?;
         let file_path = file.path();
         let file_name = file_path.file_name().context("File not valid")?;
         let file_name = file_name.to_str().context("File not valid")?;
 
-        for page in pages {
-            let end = file_name.find(']').with_context(|| {
-                format!("Filename not valid. Not found ']' in: {:?}", file_name)
-            })?;
-            let start = file_name.find('[').with_context(|| {
-                format!("Filename not valid. Not found '[' in: {:?}", file_name)
-            })?;
-            let file_page = &file_name[start + 1..end];
-            let new_name = file_name[end + 1..].to_string();
-            if file_page == page {
-                templates.push(Template {
-                    name: new_name,
-                    path: PathBuf::from(&file_path),
-                });
-            } else {
-                not_found.insert(page.to_string());
-            }
+        if file_name.starts_with(&format!("[{}]", page)) {
+            let new_name = file_name[page.len() + 2..].to_string();
+            return Ok(Some(Template {
+                name: new_name,
+                path: PathBuf::from(&file_path),
+            }));
         }
     }
-    not_found.iter().for_each(|page| {
-        println!("Page {} not found", page);
-    });
-    return Ok(templates);
+    return Ok(None);
 }
 
 /**
@@ -191,8 +188,8 @@ fn list_templates(templates_path: &PathBuf) -> Result<()> {
                 let sub_file_name = sub_file_name.to_str().context("File not valid")?;
                 println!("  {}", sub_file_name);
                 if sub_file_name == "var" {
-                    let var_file = fs::read_to_string(&sub_file_path)
-                        .context("Variables file not found")?;
+                    let var_file =
+                        fs::read_to_string(&sub_file_path).context("Variables file not found")?;
                     let lines = var_file.split('\n').collect::<Vec<&str>>();
                     for ele in lines {
                         let mut ele = ele.split('=').collect::<Vec<&str>>();

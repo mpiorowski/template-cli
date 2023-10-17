@@ -16,10 +16,12 @@ pub struct Opts {
 pub enum Action {
     #[command(about = "Set a templates main folder")]
     Set(Path),
-    #[command(about = "Use the template file")]
-    Use(Use),
     #[command(about = "Replace the template variables")]
     Var(Var),
+    #[command(about = "Copy the template file")]
+    Copy(Copy),
+    #[command(about = "Use the template files")]
+    Use(Use),
     #[command(about = "List all templates")]
     List,
     #[command(about = "Print the current configuration")]
@@ -36,6 +38,13 @@ pub struct Var {
     pub project: String,
 
     pub path: PathBuf,
+}
+
+#[derive(Args, Debug, PartialEq)]
+pub struct Copy {
+    pub project: String,
+
+    pub page: String,
 }
 
 #[derive(Args, Debug, PartialEq)]
