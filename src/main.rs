@@ -196,7 +196,7 @@ fn list_templates(templates_path: &PathBuf) -> Result<()> {
                         if ele.len() == 2 {
                             ele[0] = ele[0].trim();
                             ele[1] = ele[1].trim();
-                            println!("    {} = {}", ele[0], ele[1]);
+                            println!(r"    {}={} \", ele[0], ele[1]);
                         }
                     }
                 }
