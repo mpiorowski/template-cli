@@ -12,20 +12,6 @@ It's a simple tool that let's You very easly create, manage and use a set of tem
 
 Full written in <b>Rust</b> (needed to point it out, cos this is why You learn Rust, right?).
 
-## Best way to learn is by example!
-
-```
-tp use svelte p ps e -p reports
-```
-
-This will create a `+page.svelte`, `+page.server.ts`, `+error.ts` in `./reports` folder, each containing their own template You prepared beforehand (containing types, function, whatever You want).
-
-```
-tp use next l
-```
-
-This will create a `layout.tsx` in current folder with previously prepared NextJS tempalte.
-
 ## Install
 
 ```
@@ -34,6 +20,30 @@ cargo install templates
 
 Please make sure that `~/.cargo/bin` is in your PATH.  
 In the future more distro related options will be added :)
+
+## Best way to learn is by example!
+
+```
+tp copy p ps -p reports -- svelte
+```
+
+This will copy two files that You have previously created in the
+
+- ~/templates/svelte/[p]+page.svelte
+- ~/templates/svelte/[ps]+page.server.ts
+
+into:
+
+- ./reports/+page.svelte
+- ./reports/+page.server.ts
+
+each containing their own template You prepared beforehand (containing types, function, whatever You want).
+
+```
+tp var -- next
+```
+
+This will list all the env variables that are listed in `~/templates/next/var` file.
 
 ## Usage
 

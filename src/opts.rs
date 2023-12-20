@@ -51,5 +51,6 @@ pub struct Copy {
 
 #[derive(Args, Debug, PartialEq)]
 pub struct Var {
+    #[arg(last = true)]
     pub project: Option<String>,
 }
