@@ -40,6 +40,12 @@ into:
 each containing their own template You prepared beforehand (containing types, function, whatever You want).
 
 ```
+tp show ls
+```
+
+This will show the content of the file `~/templates/[ls]your_file_name` in the terminal, ready to be copied.
+
+```
 tp var -- next
 ```
 
@@ -55,11 +61,13 @@ First thing You need to do is set up a `templates` folder. Default value is `~/t
 tp set [path_to_your_templates_folder]
 ```
 
-Inside this folder create a subfolders for each `group` of templates (e.g. `svelte`, `next`).
-Then add files inside in a format `[cli_shortcut]template_name`.
+Inside start creating Your template files with a format `[cli_shortcut]template_name`.
+You can group them by subfolders (e.g. `svelte`, `next`).
 
 Few examples:
 
+- [r]readme.md
+- [c]config.json
 - `svelte/[p]+page.svelte`
 - `svelte/[ls]+layout.server.ts`
 - `next/[p]page.ts`
