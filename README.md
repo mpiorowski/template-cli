@@ -39,7 +39,7 @@ In the future more distro related options will be added :)
 
 ### Config
 
-First thing You need to do is set up a `templates` folder. Default value is `~/tmp`.
+First thing You need to do is set up a `templates` folder. Default value is `~/templates`.
 
 ```
 tp set [path_to_your_templates_folder]

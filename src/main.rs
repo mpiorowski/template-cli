@@ -1,66 +1,124 @@
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Ok, Result};
 use clap::Parser;
 use serde_json::{from_str, to_string, to_string_pretty, Value};
 use std::{fs, path::PathBuf};
 use templates::{
+    config::Config,
     opts::{Action, Opts},
-    setup::Setup,
     utils::{check_file, check_folder},
 };
 
 fn main() -> Result<()> {
-    let setup = Setup::try_from(Opts::parse())?;
-    let templates_path = &setup.config.templates_path;
-    let path = &setup.path;
-    match setup.action {
+    let config = Config::create()?;
+    let opts = Opts::parse();
+    match opts.action {
         Action::Set(val) => {
             println!("Setting templates path to {:?}", val.path);
-            set_templates_path(&val.path, &setup.config.config_path)?;
+            check_folder(&val.path)?;
+            set_templates_path(&val.path, &config.config_path)?;
         }
-        Action::Var(val) => {
-            println!("Replacing variables in {:?}", val.path);
-            let var_file: &PathBuf = &templates_path.join(&val.project).join("var");
-            check_file(var_file)?;
-            replace_template_variables(&val.path, var_file)?;
-        }
-        Action::Copy(copy) => {
-            let project = &copy.project;
-            let page = &copy.page;
+        Action::Show(val) => {
+            let page = &val.page;
+            let project = &val.project.unwrap_or("".to_string());
 
-            let template = find_template_file(&templates_path.join(project), page)?
-                .context(
-                anyhow!("Template not found. Create it in the templates folder with the format [{page}]name")
-            )?;
+            let template = find_template_file(&config.templates_path.join(project), page)?
+                    .context(format!("Template not found. Create it in the templates folder with the format [{page}]filename", page = page))?;
             let template_path = &template.path;
             let template_content = fs::read_to_string(&template_path).context("File not found")?;
-            println!("Copying {:?}", template_path);
+
+            println!("Showing {:?}", template_path);
             println!("{}", template_content);
         }
-        Action::Use(val) => {
-            let project = &val.project;
+        Action::Copy(val) => {
             let pages = &val.pages;
-            check_folder(&templates_path.join(project))?;
+            let project = &val.project.unwrap_or("".to_string());
+            check_folder(&config.templates_path.join(project))?;
 
+            let working_path = match val.path {
+                Some(path) => path,
+                None => PathBuf::from("."),
+            };
             for page in pages {
-                let template = find_template_file(&templates_path.join(project), page)?
-                    .context(anyhow!("Template not found. Create it in the templates folder with the format [{page}]name"))?;
+                let template = find_template_file(&config.templates_path.join(project), page)?
+                    .context(format!("Template not found. Create it in the templates folder with the format [{page}]filename", page = page))?;
                 println!(
                     "Copying {:?} to {:?}",
                     template.path,
-                    path.join(&template.name)
+                    working_path.join(&template.name)
                 );
-                fs::create_dir_all(&path).context("Folder not created")?;
-                fs::copy(&template.path, &path.join(template.name)).context("File not copied")?;
+                fs::create_dir_all(&working_path).context("Folder not created")?;
+                fs::copy(&template.path, &working_path.join(template.name))
+                    .context("File not copied")?;
             }
         }
-        Action::List => {
-            list_templates(&templates_path)?;
+        Action::Var(val) => {
+            let project_path = PathBuf::from(val.project.unwrap_or("".to_string()));
+            let variable_file_path = config.templates_path.join(project_path).join("var");
+            check_file(&variable_file_path).context(format!(
+                "Variables file not found. Create it at {:?}",
+                variable_file_path
+            ))?;
+            show_variables(&variable_file_path)?;
         }
         Action::Config => {
-            println!("{:?}", setup);
+            println!("{:?}", config);
+            list_templates(&config.templates_path)?;
         }
     }
     Ok(())
+
+    // let setup = Setup::try_from(Opts::parse())?;
+    // let templates_path = &setup.config.templates_path;
+    // let path = &setup.path;
+    // match setup.action {
+    //     Action::Set(val) => {
+    //         println!("Setting templates path to {:?}", val.path);
+    //         set_templates_path(&val.path, &setup.config.config_path)?;
+    //     }
+    //     Action::Var(val) => {
+    //         println!("Replacing variables in {:?}", val.path);
+    //         let var_file: &PathBuf = &templates_path.join(&val.project).join("var");
+    //         check_file(var_file)?;
+    //         replace_template_variables(&val.path, var_file)?;
+    //     }
+    //     Action::Copy(copy) => {
+    //         let project = &copy.project;
+    //         let page = &copy.page;
+
+    //         let template = find_template_file(&templates_path.join(project), page)?
+    //             .context(
+    //             anyhow!("Template not found. Create it in the templates folder with the format [{page}]name")
+    //         )?;
+    //         let template_path = &template.path;
+    //         let template_content = fs::read_to_string(&template_path).context("File not found")?;
+    //         println!("Copying {:?}", template_path);
+    //         println!("{}", template_content);
+    //     }
+    //     Action::Use(val) => {
+    //         let project = &val.project;
+    //         let pages = &val.pages;
+    //         check_folder(&templates_path.join(project))?;
+
+    //         for page in pages {
+    //             let template = find_template_file(&templates_path.join(project), page)?
+    //                 .context(anyhow!("Template not found. Create it in the templates folder with the format [{page}]name"))?;
+    //             println!(
+    //                 "Copying {:?} to {:?}",
+    //                 template.path,
+    //                 path.join(&template.name)
+    //             );
+    //             fs::create_dir_all(&path).context("Folder not created")?;
+    //             fs::copy(&template.path, &path.join(template.name)).context("File not copied")?;
+    //         }
+    //     }
+    //     Action::List => {
+    //         list_templates(&templates_path)?;
+    //     }
+    //     Action::Config => {
+    //         println!("{:?}", setup);
+    //     }
+    // }
+    // Ok(())
 }
 
 #[derive(Debug)]
@@ -123,44 +181,18 @@ fn find_template_file(project_path: &PathBuf, page: &str) -> Result<Option<Templ
     return Ok(None);
 }
 
-/**
- * Replace the variables in the requested file with the values in the template variables file
- * Variables in the template file must be in the format `VAR=VAL`
- * Variables in the requested file must be in the format `{{VAR}}`
- * @param path Path to the requested file
- * @param var_file Path to the variables file
- * @return Result
- */
-fn replace_template_variables(path: &PathBuf, var_file: &PathBuf) -> Result<()> {
-    let mut file = fs::read_to_string(&path).context(anyhow::anyhow!(
-        "Requested file not found. Create it at {:?}",
-        path
-    ))?;
-    let var_file = fs::read_to_string(&var_file).context(anyhow::anyhow!(
-        "Variables file not found. Create it at {:?}",
-        var_file
-    ))?;
-
-    // Split the file by lines
+fn show_variables(file_path: &PathBuf) -> Result<()> {
+    let var_file = fs::read_to_string(&file_path).context("Variables file not found")?;
     let lines = var_file.split('\n').collect::<Vec<&str>>();
     for ele in lines {
-        // Split the line by `=` to get the variable and the value
         let mut ele = ele.split('=').collect::<Vec<&str>>();
         if ele.len() == 2 {
-            // Remove the spaces
             ele[0] = ele[0].trim();
             ele[1] = ele[1].trim();
-
-            // Look for {{VAR}} in the file and replace it with the value
-            if !file.find(&format!("{{{{{}}}}}", ele[0])).is_none() {
-                file = file.replace(&format!("{{{{{}}}}}", ele[0]), ele[1]);
-                println!("Replaced {{{{{}}}}} with {}", ele[0], ele[1]);
-            }
+            println!(r"    {}={} \", ele[0], ele[1]);
         }
     }
-
-    fs::write(&path, file).context("File not written")?;
-    return Ok(());
+    Ok(())
 }
 
 /**
@@ -188,17 +220,7 @@ fn list_templates(templates_path: &PathBuf) -> Result<()> {
                 let sub_file_name = sub_file_name.to_str().context("File not valid")?;
                 println!("  {}", sub_file_name);
                 if sub_file_name == "var" {
-                    let var_file =
-                        fs::read_to_string(&sub_file_path).context("Variables file not found")?;
-                    let lines = var_file.split('\n').collect::<Vec<&str>>();
-                    for ele in lines {
-                        let mut ele = ele.split('=').collect::<Vec<&str>>();
-                        if ele.len() == 2 {
-                            ele[0] = ele[0].trim();
-                            ele[1] = ele[1].trim();
-                            println!(r"    {}={} \", ele[0], ele[1]);
-                        }
-                    }
+                    show_variables(&sub_file_path)?;
                 }
             }
         }
