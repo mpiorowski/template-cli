@@ -66,8 +66,8 @@ You can group them by subfolders (e.g. `svelte`, `next`).
 
 Few examples:
 
-- [r]readme.md
-- [c]config.json
+- `[r]readme.md`
+- `[c]config.json`
 - `[p]+page.svelte`
 - `svelte/[ls]+layout.server.ts`
 - `svelte/[e]+error.svelte`
