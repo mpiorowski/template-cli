@@ -88,10 +88,11 @@ tp copy [pages] -p <path> -- <project>
 Using example settings from config section:
 
 ```
-tp copy p lj -- next
+tp copy p lj -p ./routes -- next
 ```
 
-This will create a `page.ts` and `layout.js` in `./` dir and copy content of `next/[p]page.ts` and `next/[lj]layout.js` respectively inside them.
+This will create a `page.ts` and `layout.js` in `./routes` dir and copy content of 
+`next/[p]page.ts` and `next/[lj]layout.js` respectively inside them as `./routes/page.ts` and `./routes/layout.js`.
 
 ### Show
 
