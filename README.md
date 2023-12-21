@@ -53,7 +53,7 @@ This will list all the env variables that are listed in `~/templates/next/var` f
 
 ## Usage
 
-### Config
+### Set
 
 First thing You need to do is set up a `templates` folder. Default value is `~/templates`.
 
@@ -107,6 +107,25 @@ tp show p
 ```
 
 This will show the content of the `[p]file_name` template file in your terminal.
+
+### Var
+
+```
+tp show -- <project>
+```
+
+- `project` - the name of the subfolder inside Your templates folder (optional).
+
+```
+tp var
+```
+This will print the `var/ file content.
+
+```
+tp var -- svelte
+```
+This will print the `svelte/var/ file content.
+
 
 ### Config
 
