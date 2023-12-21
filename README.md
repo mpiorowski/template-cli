@@ -68,50 +68,50 @@ Few examples:
 
 - [r]readme.md
 - [c]config.json
-- `svelte/[p]+page.svelte`
+- `[p]+page.svelte`
 - `svelte/[ls]+layout.server.ts`
+- `svelte/[e]+error.svelte`
 - `next/[p]page.ts`
 - `next/[lt]layout.ts`
 - `next/[lj]layout.js`
 
-### Use
+### Copy
 
 ```
-tp use <lib> [pages] -p <path>
+tp copy [pages] -p <path> -- <project>
 ```
 
-- `lib` - the name of the subfolder inside Your templates folder.
-- `pages` - list of shortcut inside subfolder (e.g. `p`, `ls`).
+- `pages` - list of shortcut for template files (e.g. `p`, `ls`).
 - `path` - path for where the files will be created (optional).
+- `project` - the name of the subfolder inside Your templates folder (optional).
 
 Using example settings from config section:
 
 ```
-tp use next p lj
+tp copy p lj -- next
 ```
 
 This will create a `page.ts` and `layout.js` in `./` dir and copy content of `next/[p]page.ts` and `next/[lj]layout.js` respectively inside them.
 
-### Add
+### Show
 
 ```
-tp add <file> <lib> <short>
+tp show [page] -- <project>
 ```
 
-- `file` - the file that You want to add to templates folder
-- `lib` - the name of the subfolder inside templates folder (e.g. `svelte`, `next`)
-- `short` - the shortcut You want to use to access template (e.g. `p`, `ps`, `l`)
+- `page` - list of shortcut for template files (e.g. `p`, `ls`).
+- `project` - the name of the subfolder inside Your templates folder (optional).
 
 ```
-tp add this_page.tsx next p
+tp show p
 ```
 
-This will copy `this_page.tsx` file into `next` subfolder inside templates folder with the `[p]` shortcut for later access (`[p]this_page.tsx')
+This will show the content of the `[p]file_name` template file in your terminal.
 
-### Print
+### Config
 
 ```
-tp print
+tp config
 ```
 
 Print the current configuration.
