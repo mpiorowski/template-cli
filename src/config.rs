@@ -40,7 +40,7 @@ impl Config {
         let templates_path = config_json
             .get("templates_path")
             .and_then(|v| v.as_str())
-            .map(|v| PathBuf::from(v))
+            .map(PathBuf::from)
             .context("Templates folder path not found in config")?;
         let clipboard_command = config_json
             .get("clipboard_command")
