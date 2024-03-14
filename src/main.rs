@@ -26,7 +26,6 @@ fn main() -> Result<()> {
             let template_path = &template.path;
             let template_content = fs::read_to_string(&template_path).context("File not found")?;
 
-            println!("Showing {:?}", template_path);
             println!("{}", template_content);
         }
         Action::Copy(val) => {
