@@ -26,7 +26,7 @@ fn main() -> Result<()> {
             let template = find_template_file(&config.templates_path.join(project), page)?
                     .context(format!("Template not found. Create it in the templates folder with the format [{page}]filename", page = page))?;
             let template_path = &template.path;
-            let template_content = fs::read_to_string(&template_path).context("File not found")?;
+            let template_content = fs::read_to_string(template_path).context("File not found")?;
 
             println!("{}", template_content);
         }
@@ -37,7 +37,7 @@ fn main() -> Result<()> {
             let template = find_template_file(&config.templates_path.join(project), page)?
                     .context(format!("Template not found. Create it in the templates folder with the format [{page}]filename", page = page))?;
             let template_path = &template.path;
-            let template_content = fs::read_to_string(&template_path).context("File not found")?;
+            let template_content = fs::read_to_string(template_path).context("File not found")?;
 
             let mut child = std::process::Command::new(config.clipboard_command)
                 .stdin(std::process::Stdio::piped())
@@ -98,7 +98,7 @@ fn set_config(path: &PathBuf, clipboard: &str, config_path: &PathBuf) -> Result<
             .with_context(|| format!("Json not valid: {:?}", clipboard))?;
 
     // read config
-    let mut config_string = std::fs::read_to_string(&config_path).context("Config not found")?;
+    let mut config_string = std::fs::read_to_string(config_path).context("Config not found")?;
     let mut config_json: Value = from_str(&config_string).context("Config not valid")?;
 
     // write config
@@ -108,7 +108,7 @@ fn set_config(path: &PathBuf, clipboard: &str, config_path: &PathBuf) -> Result<
         .with_context(|| format!("Config not valid {:?}", config_string))?;
 
     // save config
-    fs::write(&config_path, &config_string)
+    fs::write(config_path, config_string)
         .with_context(|| format!("Config not written to {:?}", config_path))?;
 
     Ok(())
@@ -122,9 +122,9 @@ fn set_config(path: &PathBuf, clipboard: &str, config_path: &PathBuf) -> Result<
  * @return Paths of the files that are valid
  */
 fn find_template_file(project_path: &PathBuf, page: &str) -> Result<Option<Template>> {
-    let mut project_dir = fs::read_dir(project_path).context("Project path not valid")?;
+    let project_dir = fs::read_dir(project_path).context("Project path not valid")?;
 
-    while let Some(file) = project_dir.next() {
+    for file in project_dir {
         let file = file.context("File not valid")?;
         let file_path = file.path();
         let file_name = file_path.file_name().context("File not valid")?;
@@ -140,7 +140,7 @@ fn find_template_file(project_path: &PathBuf, page: &str) -> Result<Option<Templ
 }
 
 fn show_variables(file_path: &PathBuf) -> Result<String> {
-    let var_file = fs::read_to_string(&file_path).context("Variables file not found")?;
+    let var_file = fs::read_to_string(file_path).context("Variables file not found")?;
     let lines = var_file.split('\n').collect::<Vec<&str>>();
     let mut var_str: String = "".to_string();
     for ele in lines {
@@ -161,9 +161,9 @@ fn show_variables(file_path: &PathBuf) -> Result<String> {
  * @return Result
  */
 fn list_templates(templates_path: &PathBuf) -> Result<()> {
-    let mut files = fs::read_dir(templates_path).context("Templates path not valid")?;
+    let files = fs::read_dir(templates_path).context("Templates path not valid")?;
 
-    while let Some(file) = files.next() {
+    for file in files {
         let file = file.context("File not valid")?;
         let file_path = file.path();
         let file_name = file_path.file_name().context("File not valid")?;
@@ -172,8 +172,8 @@ fn list_templates(templates_path: &PathBuf) -> Result<()> {
 
         let is_dir = file.file_type().context("File not valid")?.is_dir();
         if is_dir {
-            let mut sub_files = fs::read_dir(&file_path).context("Path not valid")?;
-            while let Some(sub_file) = sub_files.next() {
+            let sub_files = fs::read_dir(&file_path).context("Path not valid")?;
+            for sub_file in sub_files {
                 let sub_file = sub_file.context("File not valid")?;
                 let sub_file_path = sub_file.path();
                 let sub_file_name = sub_file_path.file_name().context("File not valid")?;
