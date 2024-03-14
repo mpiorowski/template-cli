@@ -57,7 +57,18 @@ fn main() -> Result<()> {
                 "Variables file not found. Create it at {:?}",
                 variable_file_path
             ))?;
-            show_variables(&variable_file_path)?;
+            let var_str = show_variables(&variable_file_path)?;
+
+            let mut child = std::process::Command::new(config.clipboard_command)
+                .stdin(std::process::Stdio::piped())
+                .spawn()
+                .context("Clipboard not found")?;
+            child
+                .stdin
+                .as_mut()
+                .unwrap()
+                .write_all(var_str.as_bytes())
+                .context("Clipboard not written")?;
         }
         Action::Config => {
             println!("{:?}", config);
@@ -128,18 +139,20 @@ fn find_template_file(project_path: &PathBuf, page: &str) -> Result<Option<Templ
     Ok(None)
 }
 
-fn show_variables(file_path: &PathBuf) -> Result<()> {
+fn show_variables(file_path: &PathBuf) -> Result<String> {
     let var_file = fs::read_to_string(&file_path).context("Variables file not found")?;
     let lines = var_file.split('\n').collect::<Vec<&str>>();
+    let mut var_str: String = "".to_string();
     for ele in lines {
         let mut ele = ele.split('=').collect::<Vec<&str>>();
         if ele.len() == 2 {
             ele[0] = ele[0].trim();
             ele[1] = ele[1].trim();
-            println!(r"    {}={} \", ele[0], ele[1]);
+            var_str.push_str(&format!("    {}={} \\\n", ele[0], ele[1]));
+            // println!(r"    {}={} \", ele[0], ele[1]);
         }
     }
-    Ok(())
+    Ok(var_str)
 }
 
 /**
