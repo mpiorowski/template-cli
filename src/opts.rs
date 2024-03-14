@@ -29,23 +29,18 @@ pub enum Action {
 #[derive(Args, Debug, PartialEq)]
 pub struct Set {
     pub path: PathBuf,
+    pub clipboard: String,
 }
 
 #[derive(Args, Debug, PartialEq)]
 pub struct Show {
     pub page: String,
-
     pub project: Option<String>,
 }
 
 #[derive(Args, Debug, PartialEq)]
 pub struct Copy {
-    pub pages: Vec<String>,
-
-    #[arg(short = 'p', long = "path")]
-    pub path: Option<PathBuf>,
-
-    #[arg(last = true)]
+    pub page: String,
     pub project: Option<String>,
 }
 

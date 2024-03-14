@@ -10,6 +10,7 @@ use std::{
 pub struct Config {
     pub config_path: PathBuf,
     pub templates_path: PathBuf,
+    pub clipboard_command: String,
 }
 
 impl Config {
@@ -29,6 +30,7 @@ impl Config {
             return Ok(Config {
                 config_path,
                 templates_path: PathBuf::from("~/templates"),
+                clipboard_command: "xclip".to_string(),
             });
         }
         // If config file exists, read it
@@ -40,9 +42,15 @@ impl Config {
             .and_then(|v| v.as_str())
             .map(|v| PathBuf::from(v))
             .context("Templates folder path not found in config")?;
-        return Ok(Config {
+        let clipboard_command = config_json
+            .get("clipboard_command")
+            .and_then(|v| v.as_str())
+            .map(|v| v.to_string())
+            .unwrap_or("xclip".to_string());
+        Ok(Config {
             config_path,
             templates_path,
-        });
+            clipboard_command,
+        })
     }
 }

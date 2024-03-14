@@ -1,6 +1,7 @@
 use anyhow::{Context, Ok, Result};
 use clap::Parser;
 use serde_json::{from_str, to_string, to_string_pretty, Value};
+use std::io::Write;
 use std::{fs, path::PathBuf};
 use templates::{
     config::Config,
@@ -14,8 +15,9 @@ fn main() -> Result<()> {
     match opts.action {
         Action::Set(val) => {
             println!("Setting templates path to {:?}", val.path);
+            println!("Setting clipboard command to {:?}", val.clipboard);
             check_folder(&val.path)?;
-            set_templates_path(&val.path, &config.config_path)?;
+            set_config(&val.path, &val.clipboard, &config.config_path)?;
         }
         Action::Show(val) => {
             let page = &val.page;
@@ -29,26 +31,24 @@ fn main() -> Result<()> {
             println!("{}", template_content);
         }
         Action::Copy(val) => {
-            let pages = &val.pages;
+            let page = &val.page;
             let project = &val.project.unwrap_or("".to_string());
-            check_folder(&config.templates_path.join(project))?;
 
-            let working_path = match val.path {
-                Some(path) => path,
-                None => PathBuf::from("."),
-            };
-            for page in pages {
-                let template = find_template_file(&config.templates_path.join(project), page)?
+            let template = find_template_file(&config.templates_path.join(project), page)?
                     .context(format!("Template not found. Create it in the templates folder with the format [{page}]filename", page = page))?;
-                println!(
-                    "Copying {:?} to {:?}",
-                    template.path,
-                    working_path.join(&template.name)
-                );
-                fs::create_dir_all(&working_path).context("Folder not created")?;
-                fs::copy(&template.path, &working_path.join(template.name))
-                    .context("File not copied")?;
-            }
+            let template_path = &template.path;
+            let template_content = fs::read_to_string(&template_path).context("File not found")?;
+
+            let mut child = std::process::Command::new(config.clipboard_command)
+                .stdin(std::process::Stdio::piped())
+                .spawn()
+                .context("Clipboard not found")?;
+            child
+                .stdin
+                .as_mut()
+                .unwrap()
+                .write_all(template_content.as_bytes())
+                .context("Clipboard not written")?;
         }
         Action::Var(val) => {
             let project_path = PathBuf::from(val.project.unwrap_or("".to_string()));
@@ -65,64 +65,10 @@ fn main() -> Result<()> {
         }
     }
     Ok(())
-
-    // let setup = Setup::try_from(Opts::parse())?;
-    // let templates_path = &setup.config.templates_path;
-    // let path = &setup.path;
-    // match setup.action {
-    //     Action::Set(val) => {
-    //         println!("Setting templates path to {:?}", val.path);
-    //         set_templates_path(&val.path, &setup.config.config_path)?;
-    //     }
-    //     Action::Var(val) => {
-    //         println!("Replacing variables in {:?}", val.path);
-    //         let var_file: &PathBuf = &templates_path.join(&val.project).join("var");
-    //         check_file(var_file)?;
-    //         replace_template_variables(&val.path, var_file)?;
-    //     }
-    //     Action::Copy(copy) => {
-    //         let project = &copy.project;
-    //         let page = &copy.page;
-
-    //         let template = find_template_file(&templates_path.join(project), page)?
-    //             .context(
-    //             anyhow!("Template not found. Create it in the templates folder with the format [{page}]name")
-    //         )?;
-    //         let template_path = &template.path;
-    //         let template_content = fs::read_to_string(&template_path).context("File not found")?;
-    //         println!("Copying {:?}", template_path);
-    //         println!("{}", template_content);
-    //     }
-    //     Action::Use(val) => {
-    //         let project = &val.project;
-    //         let pages = &val.pages;
-    //         check_folder(&templates_path.join(project))?;
-
-    //         for page in pages {
-    //             let template = find_template_file(&templates_path.join(project), page)?
-    //                 .context(anyhow!("Template not found. Create it in the templates folder with the format [{page}]name"))?;
-    //             println!(
-    //                 "Copying {:?} to {:?}",
-    //                 template.path,
-    //                 path.join(&template.name)
-    //             );
-    //             fs::create_dir_all(&path).context("Folder not created")?;
-    //             fs::copy(&template.path, &path.join(template.name)).context("File not copied")?;
-    //         }
-    //     }
-    //     Action::List => {
-    //         list_templates(&templates_path)?;
-    //     }
-    //     Action::Config => {
-    //         println!("{:?}", setup);
-    //     }
-    // }
-    // Ok(())
 }
 
 #[derive(Debug)]
 struct Template {
-    name: String,
     path: PathBuf,
 }
 
@@ -131,18 +77,22 @@ struct Template {
  * @param path Path to the templates folder
  * @return Result
  */
-fn set_templates_path(path: &PathBuf, config_path: &PathBuf) -> Result<()> {
+fn set_config(path: &PathBuf, clipboard: &str, config_path: &PathBuf) -> Result<()> {
     // templates path
-    let templates_str = &path.to_str().context("Path not valid")?;
-    let templates_json = to_string(&templates_str).context("Json not valid")?;
+    let templates_json: serde_json::Value =
+        from_str(&to_string(path).context("Json not valid")?)
+            .with_context(|| format!("Json not valid: {:?}", path))?;
+    let clipboard_json: serde_json::Value =
+        from_str(&to_string(clipboard).context("Json not valid")?)
+            .with_context(|| format!("Json not valid: {:?}", clipboard))?;
 
     // read config
     let mut config_string = std::fs::read_to_string(&config_path).context("Config not found")?;
     let mut config_json: Value = from_str(&config_string).context("Config not valid")?;
 
     // write config
-    config_json["templates_path"] = from_str(&templates_json)
-        .with_context(|| format!("Json not valid: {:?}", templates_json))?;
+    config_json["templates_path"] = templates_json;
+    config_json["clipboard_command"] = clipboard_json;
     config_string = to_string_pretty(&config_json)
         .with_context(|| format!("Config not valid {:?}", config_string))?;
 
@@ -150,7 +100,7 @@ fn set_templates_path(path: &PathBuf, config_path: &PathBuf) -> Result<()> {
     fs::write(&config_path, &config_string)
         .with_context(|| format!("Config not written to {:?}", config_path))?;
 
-    return Ok(());
+    Ok(())
 }
 
 /**
@@ -170,14 +120,12 @@ fn find_template_file(project_path: &PathBuf, page: &str) -> Result<Option<Templ
         let file_name = file_name.to_str().context("File not valid")?;
 
         if file_name.starts_with(&format!("[{}]", page)) {
-            let new_name = file_name[page.len() + 2..].to_string();
             return Ok(Some(Template {
-                name: new_name,
                 path: PathBuf::from(&file_path),
             }));
         }
     }
-    return Ok(None);
+    Ok(None)
 }
 
 fn show_variables(file_path: &PathBuf) -> Result<()> {
@@ -225,5 +173,5 @@ fn list_templates(templates_path: &PathBuf) -> Result<()> {
         }
     }
 
-    return Ok(());
+    Ok(())
 }

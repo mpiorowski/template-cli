@@ -1,4 +1,4 @@
-# Templates CLI
+# Template CLI
 
 Have You ever wanted to create new NextJS route which let You use query parameters using `useSearchParams` hook?  
 Or insert a server side page exporting load and action functions for SvelteKit with new `satisfies` operator?  
