@@ -8,7 +8,7 @@ description = "A CLI for managing secret keys and templates for code generation.
 readme = "README.md"
 homepage = "https://github.com/mpiorowski/templates-cli"
 repository = "https://github.com/mpiorowski/templates-cli"
-keywords = ["cli", "utilities", "templates", "code-generation", "templating", "secrets", "keys"]
+keywords = ["cli", "utilities", "templates", "code-generation", "secrets"]
 categories = ["command-line-utilities"]
 
 [[bin]]
