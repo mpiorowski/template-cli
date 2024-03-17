@@ -1,14 +1,14 @@
 [package]
 name = "templates"
-version = "0.9.0"
+version = "0.10.0"
 edition = "2021"
 authors = ["Mateusz Piórowski <mateuszpiorowski@gmail.com>"]
 license = "MIT"
-description = "A CLI for managing templates"
+description = "A CLI for managing secret keys and templates for code generation."
 readme = "README.md"
 homepage = "https://github.com/mpiorowski/templates-cli"
 repository = "https://github.com/mpiorowski/templates-cli"
-keywords = ["cli", "utilities", "templates"]
+keywords = ["cli", "utilities", "templates", "code-generation", "templating", "secrets", "keys"]
 categories = ["command-line-utilities"]
 
 [[bin]]
