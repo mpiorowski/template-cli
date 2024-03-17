@@ -144,7 +144,8 @@ fn show_variables(file_path: &PathBuf) -> Result<String> {
     let lines = var_file.split('\n').collect::<Vec<&str>>();
     let mut var_str: String = "".to_string();
     for ele in lines {
-        let mut ele = ele.split('=').collect::<Vec<&str>>();
+        // split only the first =
+        let mut ele = ele.splitn(2, '=').collect::<Vec<&str>>();
         if ele.len() == 2 {
             ele[0] = ele[0].trim();
             ele[1] = ele[1].trim();
