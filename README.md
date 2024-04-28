@@ -24,26 +24,16 @@ In the future more distro related options will be added :)
 ## Best way to learn is by example!
 
 ```
-tp copy p ps -p reports -- svelte
+tp copy p -- svelte
 ```
 
-This will copy two files that You have previously created in the
-
-- ~/templates/svelte/[p]+page.svelte
-- ~/templates/svelte/[ps]+page.server.ts
-
-into:
-
-- ./reports/+page.svelte
-- ./reports/+page.server.ts
-
-each containing their own template You prepared beforehand (containing types, function, whatever You want).
+This will copy the content of the file `~/templates/svelte/[p]page` into the clipboard.
 
 ```
 tp show ls
 ```
 
-This will show the content of the file `~/templates/[ls]your_file_name` in the terminal, ready to be copied.
+This will show the content of the file `~/templates/[ls]your_file_name` in the terminal.
 
 ```
 tp var -- next
@@ -55,10 +45,10 @@ This will list all the env variables that are listed in `~/templates/next/var` f
 
 ### Set
 
-First thing You need to do is set up a `templates` folder. Default value is `~/templates`.
+First thing You need to do is set up a `templates` folder and a `clipboard` command. Default value is `~/templates` and `xclip` respectively.
 
 ```
-tp set [path_to_your_templates_folder]
+tp set [path_to_your_templates_folder] [clipboard_command]
 ```
 
 Inside start creating Your template files with a format `[cli_shortcut]template_name`.
@@ -78,21 +68,17 @@ Few examples:
 ### Copy
 
 ```
-tp copy [pages] -p <path> -- <project>
+tp copy [page] -- <project>
 ```
 
-- `pages` - list of shortcut for template files (e.g. `p`, `ls`).
-- `path` - path for where the files will be created (optional).
+- `page` - page shortcut (e.g. `p`, `ls`).
 - `project` - the name of the subfolder inside Your templates folder (optional).
 
-Using example settings from config section:
-
 ```
-tp copy p lj -p ./routes -- next
+tp copy p
 ```
 
-This will create a `page.ts` and `layout.js` in `./routes` dir and copy content of 
-`next/[p]page.ts` and `next/[lj]layout.js` respectively inside them as `./routes/page.ts` and `./routes/layout.js`.
+This will copy the content of the `[p]page` template file into the clipboard.
 
 ### Show
 
@@ -107,7 +93,7 @@ tp show [page] -- <project>
 tp show p
 ```
 
-This will show the content of the `[p]file_name` template file in your terminal.
+This will show the content of the `[p]page` template file in your terminal.
 
 ### Var
 
